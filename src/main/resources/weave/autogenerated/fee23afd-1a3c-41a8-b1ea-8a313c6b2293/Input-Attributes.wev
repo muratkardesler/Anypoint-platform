@@ -1,0 +1,23 @@
+%dw 2.0
+
+type auto_fee23afd_1a3c_41a8_b1ea_8a313c6b2293_Input_Attributes = {|
+  clientCertificate?: {|
+    publicKey?: {|  |}, 
+    "type"?: String, 
+    encoded?: Binary
+  |}, 
+  headers: {|  |}, 
+  listenerPath: String, 
+  method: String, 
+  queryParams: {|  |}, 
+  queryString: String, 
+  relativePath: String, 
+  remoteAddress: String, 
+  requestPath: String, 
+  requestUri: String, 
+  scheme: String, 
+  uriParams: {| empid: String |}, 
+  version: String, 
+  localAddress: String
+|}
+
