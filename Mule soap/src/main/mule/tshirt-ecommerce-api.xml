@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<mule xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit-soap="http://www.mulesoft.org/schema/mule/apikit-soap" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/apikit-soap http://www.mulesoft.org/schema/mule/apikit-soap/current/mule-apikit-soap.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd">
+    <http:listener-config name="api-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="8081"/>
+    </http:listener-config>
+    <apikit-soap:config httpStatusVarName="httpStatus" name="soapkit-config" port="TshirtServicePort" service="TshirtService" wsdlLocation="tshirt.wsdl"/>
+    <api-gateway:autodiscovery apiId="17848432" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="fcf08330-cf4e-4cb5-8a58-123fbba3a800" flowRef="api-main" />
+	<flow name="api-main">
+        <http:listener config-ref="api-httpListenerConfig" path="/TshirtService/TshirtServicePort">
+            <http:response statusCode="#[attributes.additionalTransportData.statusCode default 200]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[attributes.protocolHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[attributes.additionalTransportData.statusCode default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[attributes.protocolHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit-soap:router config-ref="soapkit-config">
+            <apikit-soap:attributes><![CDATA[#[%dw 2.0
+              output application/java
+              ---
+              {
+                  headers: attributes.headers,
+                  method: attributes.method,
+                  queryString: attributes.queryString
+            }]]]></apikit-soap:attributes>
+        </apikit-soap:router>
+    </flow>
+    <flow name="OrderTshirt:\soapkit-config">
+		<logger level="INFO" doc:name="Logger" doc:id="dee3ab5a-82d5-4ea6-8572-08f611c3bb03" message="Started order tshirt flow"/>
+		<ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/xml
+---
+{
+    body: {
+       message: "success",
+       item: "OrderTshirt"
+        }
+    } 
+]]>
+                </ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="ListInventory:\soapkit-config">
+        <logger level="INFO" doc:name="Logger" doc:id="1c440dd8-261c-4c00-aac5-726b3a769ba3" message="Started list inventory flow"/>
+		<ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/xml
+---
+{
+    body: {
+       message: "success",
+       item: "ListInventory"
+        }
+    } 
+]]>
+                </ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="TrackOrder:\soapkit-config">
+        <logger level="INFO" doc:name="Logger" doc:id="518e7492-594c-4231-b63f-029366c87197" message="Started tarck order flow"/>
+		<ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/xml
+---
+{
+    body: {
+       message: "success",
+       item: "TrackOrder"
+        }
+    } 
+]]>
+                </ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+</mule>
