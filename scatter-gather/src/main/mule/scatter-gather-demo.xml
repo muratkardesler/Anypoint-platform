@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="b8bdf52f-a28d-4676-9ae1-677f43de9dcf" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="scatter-gather-demoFlow" doc:id="7134ddec-1500-4973-9c08-05dec03b7b69" >
+		<scheduler doc:name="Scheduler" doc:id="39c65a3a-07ce-4c38-8122-a285ed6b096c">
+			<scheduling-strategy>
+				<fixed-frequency frequency="1" startDelay="1" timeUnit="DAYS"/>
+			</scheduling-strategy>
+		</scheduler>
+		<logger level="INFO" doc:name="Logger" doc:id="c1a115df-0d4e-4541-a2d3-f116ee1a0919" message="Started scatter-gather flow"/>
+		<scatter-gather doc:name="Scatter-Gather" doc:id="da5ccde3-8dc9-4a4c-9ce4-4f787eac01ff" >
+			<route >
+				<set-payload value="apple" doc:name="Set Apple Payload" doc:id="3682bf1f-1b9c-4d5a-8dbb-5737ec70f954" />
+			</route>
+			<route >
+				<set-payload value="banana" doc:name="Set Banana Payload" doc:id="7a8b1d44-c4f3-42b2-9d93-29ffa009c10c" />
+			</route>
+		</scatter-gather>
+		<logger level="INFO" doc:name="Logger" doc:id="56a3db6d-e455-478b-9473-22816fcc8d59" message='#[payload."0".payload]'/>
+	</flow>
+</mule>
