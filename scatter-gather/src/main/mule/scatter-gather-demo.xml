@@ -1,14 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc" xmlns:db="http://www.mulesoft.org/schema/mule/db"
-	xmlns:http="http://www.mulesoft.org/schema/mule/http"
-	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
 http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
-http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd">
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
 	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="b8bdf52f-a28d-4676-9ae1-677f43de9dcf" >
 		<http:listener-connection host="0.0.0.0" port="8081" />
 	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="d90c3604-f2b8-456a-8142-ad3e3d262f0f" >
+		<db:my-sql-connection host="localhost" port="3306" user="muratk" password="123456" database="mule4training" />
+	</db:config>
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="b146b3f6-a2d2-4b9c-a76b-457b61f8939c" >
+		<http:request-connection host="emp-verification-api.us-e2.cloudhub.io" port="80" />
+	</http:request-config>
 	<flow name="scatter-gather-demoFlow" doc:id="7134ddec-1500-4973-9c08-05dec03b7b69" >
 		<scheduler doc:name="Scheduler" doc:id="39c65a3a-07ce-4c38-8122-a285ed6b096c">
 			<scheduling-strategy>
@@ -25,5 +32,53 @@ http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/
 			</route>
 		</scatter-gather>
 		<logger level="INFO" doc:name="Logger" doc:id="56a3db6d-e455-478b-9473-22816fcc8d59" message='#[payload."0".payload]'/>
+	</flow>
+	<flow name="scatter-gather-demoFlow1" doc:id="7ea2e650-8601-4de4-925f-f7791d3a0db7" >
+		<scheduler doc:name="Scheduler" doc:id="13d8aa63-4751-4bef-a633-8d41e4700b71" >
+			<scheduling-strategy >
+				<fixed-frequency />
+			</scheduling-strategy>
+		</scheduler>
+		<logger level="INFO" doc:name="Logger" doc:id="17c70562-e898-4b06-8edb-082545d89909" message="Started fetch employees"/>
+		<scatter-gather doc:name="Scatter-Gather" doc:id="8b054cf9-8845-4a0f-afc3-129cdedf1c01" >
+			<route >
+				<db:select doc:name="Select" doc:id="164059b8-7a9e-4cc7-8b0e-350eba428371" config-ref="Database_Config">
+					<db:sql ><![CDATA[SELECT TOP (1000) [EMP_ID]
+      ,[EMP_NAME]
+      ,[EMP_STATUS]
+      ,[EMP_ADDRESS]
+  FROM [mule4training].[dbo].[emp_master]]]></db:sql>
+				</db:select>
+			</route>
+			<route >
+				<http:request method="GET" doc:name="Request" doc:id="234bc785-756b-4747-80d6-1013a17b3e7d" config-ref="HTTP_Request_configuration" path="/doc-verification"/>
+			</route>
+			<route >
+				<http:request method="GET" doc:name="Request" doc:id="587d1024-f72e-4a2d-9aa5-2796b6c6a50f" config-ref="HTTP_Request_configuration" path="/bg-verification"/>
+			</route>
+		</scatter-gather>
+		<ee:transform doc:name="Transform Message" doc:id="361fd0f1-d8fc-4bc7-8cf4-2dde38a55be6" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	employees: payload."0".payload map(emp , indexOfEmp)->{
+		empID: emp.emp_id,
+		empName: emp.emp_name,
+		empStatus: emp.emp_status,
+		empAddress: emp.emp_adress,
+		chech: payload."1".payload filter($.empID == emp.emp_id) map (empCheck , indexOfEmpChechk)->{
+			docVerification: empCheck.docVerification,
+			bg: payload."2".payload filter($.empID == emp.emp_id) map(empBGCheck , indexOfBgChechk)->{
+				diagnosisCheck: empBGCheck.diagnosisCheck,
+				criminalCheck: empBGCheck.criminalCheck
+			}
+		}
+		
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
 	</flow>
 </mule>
